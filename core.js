@@ -1,14 +1,13 @@
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-const PLAYERZ = [];
-const WALLZ = [];
-
-let LEFT, UP, RIGHT, DOWN, SHOT;
-let friction = 0;
+const BODIES = [];
+const COLLISIONS = [];
 
 class Vector{
     constructor(x, y){
+        this.x = x;
+        this.y = y;
+    }  
+   
+    set(x, y){
         this.x = x;
         this.y = y;
     }
@@ -41,134 +40,515 @@ class Vector{
         }
     }
 
+    drawVec(start_x, start_y, n, color){
+        ctx.beginPath();
+        ctx.moveTo(start_x, start_y);
+        ctx.lineTo(start_x + this.x * n, start_y + this.y * n);
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        ctx.closePath();
+    }
     
     static dot(v1, v2){
         return v1.x*v2.x + v1.y*v2.y;
     }
+
+    static cross(v1, v2){
+        return v1.x*v2.y - v1.y*v2.x;
+    }
 }
 
-class Player{
-    constructor(x, y, r, m, a, f){
-        this.pos = new Vector(x,y);
+class Matrix{
+    constructor(rows, cols){
+        this.rows = rows;
+        this.cols = cols;
+        this.data = [];
+
+        for (let i = 0; i<this.rows; i++){
+            this.data[i] = [];
+            for (let j=0; j<this.cols; j++){
+                this.data[i][j] = 0;
+            }
+        }
+    }
+
+    multiplyVec(vec){
+        let result = new Vector(0,0);
+        result.x = this.data[0][0]*vec.x + this.data[0][1]*vec.y;
+        result.y = this.data[1][0]*vec.x + this.data[1][1]*vec.y;
+        return result;
+    }
+
+    rotMx22(angle){
+        this.data[0][0] = Math.cos(angle);
+        this.data[0][1] = -Math.sin(angle);
+        this.data[1][0] = Math.sin(angle);
+        this.data[1][1] = Math.cos(angle);
+    }
+}
+
+//classes storing the primitive shapes: Line, Circle, Rectangle, Triangle
+class Line{
+    constructor(x0, y0, x1, y1){
+        this.vertex = [];
+        this.vertex[0] = new Vector(x0, y0);
+        this.vertex[1] = new Vector(x1, y1);
+        this.dir = this.vertex[1].subtr(this.vertex[0]).unit();
+        this.mag = this.vertex[1].subtr(this.vertex[0]).mag();
+        this.pos = new Vector((this.vertex[0].x+this.vertex[1].x)/2, (this.vertex[0].y+this.vertex[1].y)/2);
+    }
+
+    draw(color){
+        ctx.beginPath();
+        ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
+        ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
+        if (color === ""){
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+        } else {
+            ctx.strokeStyle = color;
+            ctx.stroke();
+        }
+        ctx.strokeStyle = "";
+        ctx.closePath();
+    }
+}
+
+class Circle{
+    constructor(x, y, r){
+        this.vertex = [];
+        this.pos = new Vector(x, y);
         this.r = r;
+    }
+
+    draw(color){
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2*Math.PI);
+        if (color === ""){
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        ctx.fillStyle = "";
+        ctx.closePath();
+    }
+}
+
+class Rectangle{
+    constructor(x1, y1, x2, y2, w){
+        this.vertex = [];
+        this.vertex[0] = new Vector(x1, y1);
+        this.vertex[1] = new Vector(x2, y2);
+        this.dir = this.vertex[1].subtr(this.vertex[0]).unit();
+        this.refDir = this.vertex[1].subtr(this.vertex[0]).unit();
+        this.length = this.vertex[1].subtr(this.vertex[0]).mag();
+        this.width = w;
+        this.vertex[2] = this.vertex[1].add(this.dir.normal().mult(this.width));
+        this.vertex[3] = this.vertex[2].add(this.dir.normal().mult(-this.length));
+        this.pos = this.vertex[0].add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(this.width/2));
+        this.angle = 0;
+        this.rotMat = new Matrix(2,2);
+    }
+
+    draw(color){
+        ctx.beginPath();
+        ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
+        ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
+        ctx.lineTo(this.vertex[2].x, this.vertex[2].y);
+        ctx.lineTo(this.vertex[3].x, this.vertex[3].y);
+        ctx.lineTo(this.vertex[0].x, this.vertex[0].y);
+        if (color === ""){
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        ctx.fillStyle = "";
+        ctx.closePath();
+    }
+
+    getVertices(angle){
+        this.rotMat.rotMx22(angle);
+        this.dir = this.rotMat.multiplyVec(this.refDir);
+        this.vertex[0] = this.pos.add(this.dir.mult(-this.length/2)).add(this.dir.normal().mult(this.width/2));
+        this.vertex[1] = this.pos.add(this.dir.mult(-this.length/2)).add(this.dir.normal().mult(-this.width/2));
+        this.vertex[2] = this.pos.add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(-this.width/2));
+        this.vertex[3] = this.pos.add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(this.width/2));
+    }
+}
+
+class Triangle{
+    constructor(x1, y1, x2, y2, x3, y3){
+        this.vertex = [];
+        this.vertex[0] = new Vector(x1, y1);
+        this.vertex[1] = new Vector(x2, y2);
+        this.vertex[2] = new Vector(x3, y3);
+        this.pos = new Vector((this.vertex[0].x+this.vertex[1].x+this.vertex[2].x)/3, (this.vertex[0].y+this.vertex[1].y+this.vertex[2].y)/3);
+        this.dir = this.vertex[0].subtr(this.pos).unit();
+        this.refDir = this.dir;
+        this.refDiam = [];
+        this.refDiam[0] = this.vertex[0].subtr(this.pos);
+        this.refDiam[1] = this.vertex[1].subtr(this.pos);
+        this.refDiam[2] = this.vertex[2].subtr(this.pos);
+        this.angle = 0;
+        this.rotMat = new Matrix(2,2);
+    }
+
+    draw(color){
+        ctx.beginPath();
+        ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
+        ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
+        ctx.lineTo(this.vertex[2].x, this.vertex[2].y);
+        ctx.lineTo(this.vertex[0].x, this.vertex[0].y);
+        if (color === ""){
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        ctx.fillStyle = "";
+        ctx.closePath();
+    }
+
+    getVertices(angle){
+        this.rotMat.rotMx22(angle);
+        this.dir = this.rotMat.multiplyVec(this.refDir);
+        this.vertex[0] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[0]));
+        this.vertex[1] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[1]));
+        this.vertex[2] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[2]));
+    }
+}
+
+//Parent class of the bodies (Ball, Capsule, Box, Star, Wall)
+class Body{
+    constructor(x, y){
+        this.comp = [];
+        this.pos = new Vector(x, y);
+        this.m = 0;
+        this.inv_m = 0;
+        this.inertia = 0;
+        this.inv_inertia = 0;
+        this.elasticity = 1;
+
+        this.friction = 0;
+        this.angFriction = 0;
+        this.maxSpeed = 0;
+        this.color = "";
+        this.layer = 0;
+
+        this.up = false;
+        this.down = false;
+        this.left = false;
+        this.right = false;
+        this.action = false;
+
+        this.vel = new Vector(0, 0);
+        this.acc = new Vector(0, 0);
+        this.keyForce = 1;
+        this.angKeyForce = 0.1;
+        this.angle = 0;
+        this.angVel = 0;
+        this.player = false;
+        BODIES.push(this);
+    }
+
+    render(){
+        for (let i in this.comp){
+            this.comp[i].draw(this.color);
+        }
+    }
+    reposition(){
+        this.acc = this.acc.unit().mult(this.keyForce);
+        this.vel = this.vel.add(this.acc);
+        this.vel = this.vel.mult(1-this.friction);
+        if (this.vel.mag() > this.maxSpeed && this.maxSpeed !== 0){
+            this.vel = this.vel.unit().mult(this.maxSpeed);
+        }
+        this.angVel *= (1-this.angFriction);
+    }
+    keyControl(){}
+    remove(){
+        if (BODIES.indexOf(this) !== -1){
+            BODIES.splice(BODIES.indexOf(this), 1);
+        }
+    }
+}
+
+class Ball extends Body{
+    constructor(x, y, r, m){
+        super();
+        this.pos = new Vector(x, y);
+        this.comp = [new Circle(x, y, r)];
         this.m = m;
         if (this.m === 0){
             this.inv_m = 0;
         } else {
             this.inv_m = 1 / this.m;
         }
-        this.elasticity = 1;
-        this.vel = new Vector(0,0);
-        this.acc = new Vector(0,0);
-        this.acceleration = a
-        this.friction = f
-        this.player = false;
-        PLAYERZ.push(this);
     }
 
-    drawPlayer(){
-        ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2*Math.PI);
-        ctx.strokeStyle = "black";
-        ctx.stroke();
-        ctx.fillStyle = "red";
-        ctx.fill();
-        ctx.closePath();
-    }
-
-    display(){
-        ctx.fillStyle = "black";
-        ctx.fillText("m= "+this.m, this.pos.x-10, this.pos.y-5);
-        ctx.fillText("e= "+this.elasticity, this.pos.x-10, this.pos.y+5);
+    setPosition(x, y, a = this.angle){
+        this.pos.set(x, y);
+        this.comp[0].pos = this.pos;
     }
 
     reposition(){
-        this.acc = this.acc.unit().mult(this.acceleration);
-        this.vel = this.vel.add(this.acc);
-        this.vel = this.vel.mult(1-this.friction);
-        this.pos = this.pos.add(this.vel);
+        super.reposition();
+        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
+    }
+
+    keyControl(){
+        if(this.left){
+            this.acc.x = -this.keyForce;
+        }
+        if(this.up){
+            this.acc.y = -this.keyForce;
+        }
+        if(this.right){
+            this.acc.x = this.keyForce;
+        }
+        if(this.down){
+            this.acc.y = this.keyForce;
+        }
+        if(!this.left && !this.right){
+            this.acc.x = 0;
+        }
+        if(!this.up && !this.down){
+            this.acc.y = 0;
+        }
     }
 }
 
-//Walls are line segments between two points
-class Wall{
+class Capsule extends Body{
+    constructor(x1, y1, x2, y2, r, m){
+        super();
+        this.comp = [new Circle(x1, y1, r), new Circle(x2, y2, r)];
+        let recV1 = this.comp[1].pos.add(this.comp[1].pos.subtr(this.comp[0].pos).unit().normal().mult(r));
+        let recV2 = this.comp[0].pos.add(this.comp[1].pos.subtr(this.comp[0].pos).unit().normal().mult(r));
+        this.comp.unshift(new Rectangle(recV1.x, recV1.y, recV2.x, recV2.y, 2*r));
+        this.pos = this.comp[0].pos;
+        this.m = m;
+        if (this.m === 0){
+            this.inv_m = 0;
+        } else {
+            this.inv_m = 1 / this.m;
+        }
+        this.inertia = this.m * ((2*this.comp[0].width)**2 +(this.comp[0].length+2*this.comp[0].width)**2) / 12;
+        if (this.m === 0){
+            this.inv_inertia = 0;
+        } else {
+            this.inv_inertia = 1 / this.inertia;
+        }
+    }
+
+    keyControl(){
+        if(this.up){
+            this.acc = this.comp[0].dir.mult(-this.keyForce);
+        }
+        if(this.down){
+            this.acc = this.comp[0].dir.mult(this.keyForce);
+        }
+        if(this.left){
+            this.angVel = -this.angKeyForce;
+        }
+        if(this.right){
+            this.angVel = this.angKeyForce;
+        }
+        if(!this.up && !this.down){
+            this.acc.set(0, 0);
+        }
+    }
+
+    setPosition(x, y, a = this.angle){
+        this.pos.set(x, y);
+        this.angle = a;
+        this.comp[0].pos = this.pos;
+        this.comp[0].getVertices(this.angle + this.angVel);
+        this.comp[1].pos = this.comp[0].pos.add(this.comp[0].dir.mult(-this.comp[0].length/2));
+        this.comp[2].pos = this.comp[0].pos.add(this.comp[0].dir.mult(this.comp[0].length/2));
+        this.angle += this.angVel;
+    }
+
+    reposition(){
+        super.reposition();
+        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
+    }
+}
+
+class Box extends Body{
+    constructor(x1, y1, x2, y2, w, m){
+        super();
+        this.comp = [new Rectangle(x1, y1, x2, y2, w)];
+        this.pos = this.comp[0].pos;
+        this.m = m;
+        if (this.m === 0){
+            this.inv_m = 0;
+        } else {
+            this.inv_m = 1 / this.m;
+        }
+        this.inertia = this.m * (this.comp[0].width**2 +this.comp[0].length**2) / 12;
+        if (this.m === 0){
+            this.inv_inertia = 0;
+        } else {
+            this.inv_inertia = 1 / this.inertia;
+        }
+    }
+
+    keyControl(){
+        if(this.up){
+            this.acc = this.comp[0].dir.mult(-this.keyForce);;
+        }
+        if(this.down){
+            this.acc = this.comp[0].dir.mult(this.keyForce);;
+        }
+        if(this.left){
+            this.angVel = -this.angKeyForce;
+        }
+        if(this.right){
+            this.angVel = this.angKeyForce;
+        }
+        if(!this.up && !this.down){
+            this.acc.set(0,0);
+        }
+    }
+
+    setPosition(x, y, a = this.angle){
+        this.pos.set(x, y);
+        this.angle = a;
+        this.comp[0].pos = this.pos;
+        this.comp[0].getVertices(this.angle + this.angVel);
+        this.angle += this.angVel;
+    }
+
+    reposition(){
+        super.reposition();
+        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
+    }
+}
+
+class Star extends Body{
+    constructor(x1, y1, r, m){
+        super();
+        this.comp = [];
+        this.r = r;
+        let center = new Vector(x1, y1);
+        let upDir = new Vector(0, -1);
+        let p1 = center.add(upDir.mult(r));
+        let p2 = center.add(upDir.mult(-r/2)).add(upDir.normal().mult(-r*Math.sqrt(3)/2));
+        let p3 = center.add(upDir.mult(-r/2)).add(upDir.normal().mult(r*Math.sqrt(3)/2));
+        this.comp.push(new Triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y));
+        p1 = center.add(upDir.mult(-r));
+        p2 = center.add(upDir.mult(r/2)).add(upDir.normal().mult(-r*Math.sqrt(3)/2));
+        p3 = center.add(upDir.mult(r/2)).add(upDir.normal().mult(r*Math.sqrt(3)/2));
+        this.comp.push(new Triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y));
+        this.pos = this.comp[0].pos;
+        
+        this.m = m;
+        if (this.m === 0){
+            this.inv_m = 0;
+        } else {
+            this.inv_m = 1 / this.m;
+        }
+        this.inertia = this.m * ((2*this.r)**2) / 12;
+        if (this.m === 0){
+            this.inv_inertia = 0;
+        } else {
+            this.inv_inertia = 1 / this.inertia;
+        }
+    }
+
+    keyControl(){
+        if(this.up){
+            this.acc = this.comp[0].dir.mult(-this.keyForce);
+        }
+        if(this.down){
+            this.acc = this.comp[0].dir.mult(this.keyForce);
+        }
+        if(this.left){
+            this.angVel = -this.angKeyForce;
+        }
+        if(this.right){
+            this.angVel = this.angKeyForce;
+        }
+        if(!this.up && !this.down){
+            this.acc.set(0,0);
+        }
+    }
+
+    setPosition(x, y, a = this.angle){
+        this.pos.set(x, y);
+        this.angle = a;
+        this.comp[0].pos = this.pos;
+        this.comp[1].pos = this.pos;
+        this.comp[0].getVertices(this.angle + this.angVel);
+        this.comp[1].getVertices(this.angle + this.angVel);
+        this.angle += this.angVel;
+    }
+
+    reposition(){
+        super.reposition();
+        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
+   }
+}
+
+class Wall extends Body{
     constructor(x1, y1, x2, y2){
-        this.start = new Vector(x1, y1);
-        this.end = new Vector(x2, y2);
-        WALLZ.push(this);
-    }
-
-    drawWall(){
-        ctx.beginPath();
-        ctx.moveTo(this.start.x, this.start.y);
-        ctx.lineTo(this.end.x, this.end.y);
-        ctx.strokeStyle = "white";
-        ctx.stroke();
-        ctx.closePath();
-    }
-
-    wallUnit(){
-        return this.end.subtr(this.start).unit();
+        super();
+        this.comp = [new Line(x1, y1, x2, y2)];
+        this.pos = new Vector((x1+x2)/2, (y1+y2)/2);
     }
 }
 
-function keyControl(b){
-    canvas.addEventListener('keydown', function(e){
-        if(e.keyCode === 37){
-            LEFT = true;
-        }
-        if(e.keyCode === 38){
-            UP = true;
-        }
-        if(e.keyCode === 39){
-            RIGHT = true;
-        }
-        if(e.keyCode === 40){
-            DOWN = true;
-        }
-        if(e.keyCode === 32){
-            SHOT = true
-        }
-    });
-    
-    canvas.addEventListener('keyup', function(e){
-        if(e.keyCode === 37){
-            LEFT = false;
-        }
-        if(e.keyCode === 38){
-            UP = false;
-        }
-        if(e.keyCode === 39){
-            RIGHT = false;
-        }
-        if(e.keyCode === 40){
-            DOWN = false;
-        }
-        if(e.keyCode === 32){
-            SHOT = false
-        }
-    });
-    
-    if(LEFT){
-        b.acc.x = -b.acceleration;
+//Collision manifold, consisting the data for collision handling
+//Manifolds are collected in an array for every frame
+class CollData{
+    constructor(o1, o2, normal, pen, cp){
+        this.o1 = o1;
+        this.o2 = o2;
+        this.normal = normal;
+        this.pen = pen;
+        this.cp = cp;
     }
-    if(UP){
-        b.acc.y = -b.acceleration;
+
+    penRes(){
+        let penResolution = this.normal.mult(this.pen / (this.o1.inv_m + this.o2.inv_m));
+        this.o1.pos = this.o1.pos.add(penResolution.mult(this.o1.inv_m));
+        this.o2.pos = this.o2.pos.add(penResolution.mult(-this.o2.inv_m));
     }
-    if(RIGHT){
-        b.acc.x = b.acceleration;
-    }
-    if(DOWN){
-        b.acc.y = b.acceleration;
-    }
-    if(SHOT){
-        kicking(player1);
-    }
-    if(!LEFT && !RIGHT){
-        b.acc.x = 0;
-    }
-    if(!UP && !DOWN){
-        b.acc.y = 0;
+
+    collRes(){
+        //1. Closing velocity
+        let collArm1 = this.cp.subtr(this.o1.comp[0].pos);
+        let rotVel1 = new Vector(-this.o1.angVel * collArm1.y, this.o1.angVel * collArm1.x);
+        let closVel1 = this.o1.vel.add(rotVel1);
+        let collArm2 = this.cp.subtr(this.o2.comp[0].pos);
+        let rotVel2= new Vector(-this.o2.angVel * collArm2.y, this.o2.angVel * collArm2.x);
+        let closVel2 = this.o2.vel.add(rotVel2);
+
+        //2. Impulse augmentation
+        let impAug1 = Vector.cross(collArm1, this.normal);
+        impAug1 = impAug1 * this.o1.inv_inertia * impAug1;
+        let impAug2 = Vector.cross(collArm2, this.normal);
+        impAug2 = impAug2 * this.o2.inv_inertia * impAug2;
+
+        let relVel = closVel1.subtr(closVel2);
+        let sepVel = Vector.dot(relVel, this.normal);
+        let new_sepVel = -sepVel * Math.min(this.o1.elasticity, this.o2.elasticity);
+        let vsep_diff = new_sepVel - sepVel;
+
+        let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
+        let impulseVec = this.normal.mult(impulse);
+
+        //3. Changing the velocities
+        this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
+        this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
+
+        this.o1.angVel += this.o1.inv_inertia * Vector.cross(collArm1, impulseVec);
+        this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec); 
     }
 }
 
@@ -177,213 +557,279 @@ function round(number, precision){
     return Math.round(number * factor) / factor;
 }
 
+function randInt(min, max){
+    return Math.floor(Math.random() * (max-min+1)) + min;
+}
 
-//returns with the closest point on a line segment to a given point
-function closestPointBW(b1, w1){
-    let playerToWallStart = w1.start.subtr(b1.pos);
-    if(Vector.dot(w1.wallUnit(), playerToWallStart) > 0){
+function testCircle(x, y, color="black"){
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, 2*Math.PI);
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function closestPointOnLS(p, w1){
+    let ballToWallStart = w1.start.subtr(p);
+    if(Vector.dot(w1.dir, ballToWallStart) > 0){
         return w1.start;
     }
 
-    let wallEndToPlayer = b1.pos.subtr(w1.end);
-    if(Vector.dot(w1.wallUnit(), wallEndToPlayer) > 0){
+    let wallEndToBall = p.subtr(w1.end);
+    if(Vector.dot(w1.dir, wallEndToBall) > 0){
         return w1.end;
     }
 
-    let closestDist = Vector.dot(w1.wallUnit(), playerToWallStart);
-    let closestVect = w1.wallUnit().mult(closestDist);
+    let closestDist = Vector.dot(w1.dir, ballToWallStart);
+    let closestVect = w1.dir.mult(closestDist);
     return w1.start.subtr(closestVect);
 }
 
-function coll_det_bb(b1, b2){
-    if(b1.r + b2.r >= b2.pos.subtr(b1.pos).mag()){
-        return true;
+//Separating axis theorem on two objects
+//Returns with the details of the Minimum Translation Vector (or false if no collision)
+function sat(o1, o2){
+    let minOverlap = null;
+    let smallestAxis;
+    let vertexObj;
+
+    let axes = findAxes(o1, o2);
+    let proj1, proj2 = 0;
+    let firstShapeAxes = getShapeAxes(o1);
+
+    for(let i=0; i<axes.length; i++){
+        proj1 = projShapeOntoAxis(axes[i], o1);
+        proj2 = projShapeOntoAxis(axes[i], o2);
+        let overlap = Math.min(proj1.max, proj2.max) - Math.max(proj1.min, proj2.min);
+        if (overlap < 0){
+            return false;
+        }
+
+        if((proj1.max > proj2.max && proj1.min < proj2.min) ||
+          (proj1.max < proj2.max && proj1.min > proj2.min)){
+              let mins = Math.abs(proj1.min - proj2.min);
+              let maxs = Math.abs(proj1.max - proj2.max);
+              if (mins < maxs){
+                  overlap += mins;
+              } else {
+                  overlap += maxs;
+                  axes[i] = axes[i].mult(-1);
+              }
+          }
+
+        if (overlap < minOverlap || minOverlap === null){
+            minOverlap = overlap;
+            smallestAxis = axes[i];
+            if (i<firstShapeAxes){
+                vertexObj = o2;
+                if(proj1.max > proj2.max){
+                    smallestAxis = axes[i].mult(-1);
+                }
+            } else {
+                vertexObj = o1;
+                if(proj1.max < proj2.max){
+                    smallestAxis = axes[i].mult(-1);
+                }
+            }
+        }  
+    };
+
+    let contactVertex = projShapeOntoAxis(smallestAxis, vertexObj).collVertex;
+    //smallestAxis.drawVec(contactVertex.x, contactVertex.y, minOverlap, "blue");
+
+    if(vertexObj === o2){
+        smallestAxis = smallestAxis.mult(-1);
+    }
+
+    return {
+        pen: minOverlap,
+        axis: smallestAxis,
+        vertex: contactVertex
+    }
+}
+
+//Helping functions for the SAT below
+//returns the min and max projection values of a shape onto an axis
+function projShapeOntoAxis(axis, obj){
+    setBallVerticesAlongAxis(obj, axis);
+    let min = Vector.dot(axis, obj.vertex[0]);
+    let max = min;
+    let collVertex = obj.vertex[0];
+    for(let i=0; i<obj.vertex.length; i++){
+        let p = Vector.dot(axis, obj.vertex[i]);
+        if(p<min){
+            min = p;
+            collVertex = obj.vertex[i];
+        } 
+        if(p>max){
+            max = p;
+        }
+    }
+    return {
+        min: min,
+        max: max, 
+        collVertex: collVertex
+    }
+}
+
+//finds the projection axes for the two objects
+function findAxes(o1, o2){
+    let axes = [];
+    if(o1 instanceof Circle && o2 instanceof Circle){
+        if(o2.pos.subtr(o1.pos).mag() > 0){
+            axes.push(o2.pos.subtr(o1.pos).unit());
+        } else {
+            axes.push(new Vector(Math.random(), Math.random()).unit());
+        }        
+        return axes;
+    }
+    if(o1 instanceof Circle){
+        axes.push(closestVertexToPoint(o2, o1.pos).subtr(o1.pos).unit());
+    }
+    if(o1 instanceof Line){
+        axes.push(o1.dir.normal());
+    }   
+    if (o1 instanceof Rectangle){
+        axes.push(o1.dir.normal());
+        axes.push(o1.dir);
+    }
+    if (o1 instanceof Triangle){
+        axes.push(o1.vertex[1].subtr(o1.vertex[0]).normal());
+        axes.push(o1.vertex[2].subtr(o1.vertex[1]).normal());
+        axes.push(o1.vertex[0].subtr(o1.vertex[2]).normal());
+    }
+    if (o2 instanceof Circle){
+        axes.push(closestVertexToPoint(o1, o2.pos).subtr(o2.pos).unit());
+    }
+    if (o2 instanceof Line){
+        axes.push(o2.dir.normal());
+    }   
+    if (o2 instanceof Rectangle){
+        axes.push(o2.dir.normal());
+        axes.push(o2.dir);
+    }
+    if (o2 instanceof Triangle){
+        axes.push(o2.vertex[1].subtr(o2.vertex[0]).normal());
+        axes.push(o2.vertex[2].subtr(o2.vertex[1]).normal());
+        axes.push(o2.vertex[0].subtr(o2.vertex[2]).normal());
+    }
+    return axes;
+}
+
+//iterates through an objects vertices and returns the one that is the closest to the given point
+function closestVertexToPoint(obj, p){
+    let closestVertex;
+    let minDist = null;
+    for(let i=0; i<obj.vertex.length; i++){
+        if(p.subtr(obj.vertex[i]).mag() < minDist || minDist === null){
+            closestVertex = obj.vertex[i];
+            minDist = p.subtr(obj.vertex[i]).mag();
+        }
+    }
+    return closestVertex;
+}
+
+//returns the number of the axes that belong to an object
+function getShapeAxes(obj){
+    if(obj instanceof Circle || obj instanceof Line){
+        return 1;
+    }
+    if(obj instanceof Rectangle){
+        return 2;
+    }
+    if(obj instanceof Triangle){
+        return 3;
+    }
+}
+
+//the ball vertices always need to be recalculated based on the current projection axis direction
+function setBallVerticesAlongAxis(obj, axis){
+    if(obj instanceof Circle){
+        obj.vertex[0] = obj.pos.add(axis.unit().mult(-obj.r));
+        obj.vertex[1] = obj.pos.add(axis.unit().mult(obj.r));
+    }
+}
+//Thats it for the SAT and its support functions
+
+//Prevents objects to float away from the canvas
+function putWallsAround(x1, y1, x2, y2){
+    let edge1 = new Wall(x1, y1, x2, y1);
+    let edge2 = new Wall(x2, y1, x2, y2);
+    let edge3 = new Wall(x2, y2, x1, y2);
+    let edge4 = new Wall(x1, y2, x1, y1);
+}
+
+function collide(o1, o2){
+    let bestSat = {
+        pen: null,
+        axis: null,
+        vertex: null
+    }
+    for(let o1comp=0; o1comp<o1.comp.length; o1comp++){
+        for(let o2comp=0; o2comp<o2.comp.length; o2comp++){
+            if(sat(o1.comp[o1comp], o2.comp[o2comp]).pen > bestSat.pen){
+                bestSat = sat(o1.comp[o1comp], o2.comp[o2comp]);
+            }
+        }
+    }
+    if (bestSat.pen !== null){
+        return bestSat;
     } else {
         return false;
     }
 }
 
-//collision detection between ball and wall
-function coll_det_bw(b1, w1){
-    let playerToClosest = closestPointBW(b1, w1).subtr(b1.pos);
-    if (playerToClosest.mag() <= b1.r){
-        return true;
-    }
+function userInteraction(){
+    BODIES.forEach((b) => {
+        b.keyControl();
+    })
 }
 
-function pen_res_bb(b1, b2){
-    let dist = b1.pos.subtr(b2.pos);
-    let pen_depth = b1.r + b2.r - dist.mag();
-    let pen_res = dist.unit().mult(pen_depth / (b1.inv_m + b2.inv_m));
-    b1.pos = b1.pos.add(pen_res.mult(b1.inv_m));
-    b2.pos = b2.pos.add(pen_res.mult(-b2.inv_m));
-}
+function gameLogic(){}
 
-//penetration resolution between ball and wall
-function pen_res_bw(b1, w1){
-    let penVect = b1.pos.subtr(closestPointBW(b1, w1));
-    b1.pos = b1.pos.add(penVect.unit().mult(b1.r-penVect.mag()));
-}
-
-function coll_res_bb(b1, b2){
-    let normal = b1.pos.subtr(b2.pos).unit();
-    let relVel = b1.vel.subtr(b2.vel);
-    let sepVel = Vector.dot(relVel, normal);
-    let new_sepVel = -sepVel * Math.min(b1.elasticity, b2.elasticity);
+function physicsLoop(timestamp) {
+    COLLISIONS.length = 0;
     
-    let vsep_diff = new_sepVel - sepVel;
-    let impulse = vsep_diff / (b1.inv_m + b2.inv_m);
-    let impulseVec = normal.mult(impulse);
-
-    b1.vel = b1.vel.add(impulseVec.mult(b1.inv_m));
-    b2.vel = b2.vel.add(impulseVec.mult(-b2.inv_m));
-}
-
-function coll_res_ball(b1, b2){
-    let normal = b1.pos.subtr(b2.pos).unit();
-    let relVel = b1.vel.subtr(b2.vel);
-    let sepVel = Vector.dot(relVel, normal);
-    let new_sepVel = -sepVel * Math.min(b1.elasticity, b2.elasticity);
-    
-    let vsep_diff = new_sepVel - sepVel;
-    let impulse = vsep_diff / (b1.inv_m + b2.inv_m);
-    let impulseVec = normal.mult(impulse);
-
-    b1.vel = b1.vel.add(impulseVec.mult(b1.inv_m));
-    if (SHOT){
-        let impulse = 4;
-        let impulseVec = normal.mult(impulse);
-        b2.vel = b2.vel.add(impulseVec.mult(-b2.inv_m *4.5));
-        SHOT = false;
-    }else{
-        console.log(impulse)
-        b2.vel = b2.vel.add(impulseVec.mult(-b2.inv_m));
-    }
-}
-
-
-
-//collision response between ball and wall
-function coll_res_bw(b1, w1){
-    let normal = b1.pos.subtr(closestPointBW(b1, w1)).unit();
-    let sepVel = Vector.dot(b1.vel, normal);
-    let new_sepVel = -sepVel * b1.elasticity;
-    let vsep_diff = sepVel - new_sepVel;
-    b1.vel = b1.vel.add(normal.mult(-vsep_diff));
-}
-
-function momentum_display(){
-    let momentum = Player1.vel.add(Player2.vel).mag();
-    ctx.fillText("Momentum: "+round(momentum, 4), 500, 330);
-}
-
-
-function kicking(player) {
-}
-
-function main(timestamp) {
-    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-    PLAYERZ.forEach((b, index) => {
-        b.drawPlayer();
-        if (b.player){
-            keyControl(b);
-        }
-        //each ball object iterates through each wall object
-        WALLZ.forEach((w) => {
-            if(coll_det_bw(PLAYERZ[index], w)){
-                pen_res_bw(PLAYERZ[index], w);
-                coll_res_bw(PLAYERZ[index], w);
-            }
-        })
-        for(let i = index+1; i<PLAYERZ.length; i++){
-            if(coll_det_bb(PLAYERZ[index], PLAYERZ[i])){
-                pen_res_bb(PLAYERZ[index], PLAYERZ[i]);
-                if(PLAYERZ[i] == ball){
-                    console.log('es la pelota pa')
-                    coll_res_ball(PLAYERZ[index], PLAYERZ[i]);
-
-                }else{
-
-                    coll_res_bb(PLAYERZ[index], PLAYERZ[i]);
-                }
-            }
-        }
-        gameScore()
-
-        b.display();
+    BODIES.forEach((b) => {
         b.reposition();
+    })
+    
+    BODIES.forEach((b, index) => {
+        for(let bodyPair = index+1; bodyPair < BODIES.length; bodyPair++){
+           if((BODIES[index].layer === BODIES[bodyPair].layer ||
+               BODIES[index].layer === 0 || BODIES[bodyPair].layer === 0) && 
+               collide(BODIES[index], BODIES[bodyPair])){
+                    let bestSat = collide(BODIES[index], BODIES[bodyPair]);
+                    COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex));
+           }
+        }
     });
 
-    //drawing each wall on the canvas
-    WALLZ.forEach((w) => {
-        w.drawWall();
+    COLLISIONS.forEach((c) => {
+        c.penRes();
+        c.collRes();
+    });
+}
+
+//If anything else (text, data...) needs to be rendered on the canvas
+function userInterface(){};
+
+function renderLoop(){
+    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    BODIES.forEach((b) => {
+        b.render();
     })
-
-    requestAnimationFrame(main);
-}
-    let player1 = new Player(100, 100, 27, 4, 0.2, 0.06);
-    player1.elasticity =0.9;
-    let player2 = new Player(300, 300, 27, 4, 0.2, 0.06);
-    player2.elasticity =0.8;
-    player1.score = 0;
-    player2.score = 0;
-
-
-let ball = new Player(200, 200, 10, 2, 0.5, 0.02);
-ball.elasticity = 1;
-
-
-function gameScore(){
-
-    if(ball.pos.x < 45){
-        player2.score ++;
-        ball.pos.x = 300
-        ball.pos.y = 300
-        player2.pos.x=100
-        player1.pos.x=400
-
-        // scoring(player2)
-
-    }
-    if(ball.pos.x > 595){
-        player1.score ++;
-        ball.pos.x = 300
-        player2.pos.x=100
-
-        player1.pos.x=400
-        // scoring(player1)
-        
-        
-    }
-    // if(player1.score === 3 || player2.score === 3){
-    //     gameOver();
-    // }
-    ctx.fillText(player1.score, 20, 30);
-    ctx.fillText(player2.score, 600, 30);
+    userInterface();
 }
 
-function scoring(player){
-    console.log('golazo de' +player)
-    
+function mainLoop(){
+    userInteraction();
+    physicsLoop();
+    renderLoop();
+    gameLogic();
+    requestAnimationFrame(mainLoop);
 }
-function buildStadium(){
-    new Wall(60, 80, 580, 80);
-    new Wall(60, 460, 580, 460);
 
-    new Wall(60, 80, 60, 180);
-    new Wall(60, 460, 60, 360);
-    new Wall(580, 80, 580, 180);
-    new Wall(580, 460, 580, 360);
-
-    new Wall(50, 360, 10, 360);
-    new Wall(0, 360, 0, 180);
-    new Wall(10, 180, 50, 180);
-    new Wall(590, 360, 630, 360);
-    new Wall(640, 360, 640, 180);
-    new Wall(630, 180, 590, 180);
+function renderOnly(){
+    renderLoop();
+    requestAnimationFrame(renderOnly);
 }
-buildStadium()
-PLAYERZ[0].player = true;
-
-
-requestAnimationFrame(main);

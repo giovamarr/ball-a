@@ -9,28 +9,28 @@ const io = require('socket.io')(httpServer, {
       }
 })
 
-//Hello World line taken from the express website
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+let players = {};
 
-//The 'connection' is a reserved event name in socket.io
-//For whenever a connection is established between the server and a client
-io.on('connection', (socket) => {
+io.on('connection', connected);
 
-	//Displaying a message on the terminal
-    console.log('a user connected');
-    //Sending a message to the client
-    socket.emit('serverToClient', "Hello, client!");
-    //Receiving a message from the client and putting it on the terminal
-    socket.on('clientToServer', data => {
-        console.log(data);
+//listening to events after the connection is estalished
+function connected(socket){
+    socket.on('newPlayer', data => {
+        console.log("New client connected, with id: "+socket.id);
+        players[socket.id] = data;
+        console.log("Starting position: "+players[socket.id].x+" - "+players[socket.id].y);
+        console.log("Current number of players: "+Object.keys(players).length);
+        console.log("players dictionary: ", players);
+        io.emit('updatePlayers', players);
     })
-    //When the client sends a message via the 'clientToClient' event
-    //The server forwards it to all the other clients that are connected
-    socket.on('clientToClient', data => {
-        socket.broadcast.emit('serverToClient', data);
+    socket.on('disconnect', function(){
+        delete players[socket.id];
+        console.log("Goodbye client with id "+socket.id);
+        console.log("Current number of players: "+Object.keys(players).length);
+        io.emit('updatePlayers', players);
     })
-    
-});
-httpServer.listen(3000);
+    socket.on('ClientClientHello', data => {
+        socket.broadcast.emit('ServerClientHello', data);
+    })
+}
+httpServer.listen(5500);

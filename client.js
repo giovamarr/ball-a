@@ -1,18 +1,41 @@
-//Establishing a connection with the server on port 5500y
-const socket = io('http://localhost:3000');
+const socket = io.connect('http://localhost:5500');
 
-//Grabbing the button element by the ID
-const HelloBtn = document.getElementById('helloButton');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-//Callback function fires on the event called 'serverToClient'
-socket.on('serverToClient', (data) => {
-    alert(data);
+let clientBalls = {};
+
+//setting up the environment
+putWallsAround(0, 0, canvas.clientWidth, canvas.clientHeight);
+let startX = 40+Math.random()*560;
+let startY = 40+Math.random()*400;
+let playerBall = new Ball(startX, startY, 40, 5);
+playerBall.player = true;
+playerBall.maxSpeed = 5;
+
+//sending the initial positions to the server
+socket.emit('newPlayer', {x: startX, y: startY});
+//reacting for new and disconnecting clients
+socket.on('updatePlayers', players => {
+    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    playersFound = {};
+    for(let id in players){
+        if(clientBalls[id] === undefined && id !== socket.id){
+            clientBalls[id] = new Ball (players[id].x, players[id].y, 40, 5);
+        }
+        playersFound[id] = true;
+    }
+    for(let id in clientBalls){
+        if(!playersFound[id]){
+            clientBalls[id].remove();
+            delete clientBalls[id];
+        }
+    }
 })
 
-//Client sends a message at the moment it got connected with the server
-socket.emit('clientToServer', "Hello, server!");
+function gameLogic(){
+    socket.emit('update', {x: playerBall.pos.x, y: playerBall.pos.y});
+}
 
-//Event listener on the button element: sends a message to the server when clicked
-// HelloBtn.addEventListener('click', () => {
-//     socket.emit('clientToClient', "Hello to the fellow clients!");
-// })
+userInput(playerBall);
+requestAnimationFrame(mainLoop);
