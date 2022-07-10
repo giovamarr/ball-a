@@ -87,7 +87,6 @@ class Matrix{
     }
 }
 
-//classes storing the primitive shapes: Line, Circle, Rectangle, Triangle
 class Line{
     constructor(x0, y0, x1, y1){
         this.vertex = [];
@@ -103,7 +102,7 @@ class Line{
         ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
         ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
         if (color === ""){
-            ctx.strokeStyle = "black";
+            ctx.strokeStyle = "white";
             ctx.stroke();
         } else {
             ctx.strokeStyle = color;
@@ -136,93 +135,6 @@ class Circle{
     }
 }
 
-class Rectangle{
-    constructor(x1, y1, x2, y2, w){
-        this.vertex = [];
-        this.vertex[0] = new Vector(x1, y1);
-        this.vertex[1] = new Vector(x2, y2);
-        this.dir = this.vertex[1].subtr(this.vertex[0]).unit();
-        this.refDir = this.vertex[1].subtr(this.vertex[0]).unit();
-        this.length = this.vertex[1].subtr(this.vertex[0]).mag();
-        this.width = w;
-        this.vertex[2] = this.vertex[1].add(this.dir.normal().mult(this.width));
-        this.vertex[3] = this.vertex[2].add(this.dir.normal().mult(-this.length));
-        this.pos = this.vertex[0].add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(this.width/2));
-        this.angle = 0;
-        this.rotMat = new Matrix(2,2);
-    }
-
-    draw(color){
-        ctx.beginPath();
-        ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
-        ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
-        ctx.lineTo(this.vertex[2].x, this.vertex[2].y);
-        ctx.lineTo(this.vertex[3].x, this.vertex[3].y);
-        ctx.lineTo(this.vertex[0].x, this.vertex[0].y);
-        if (color === ""){
-            ctx.strokeStyle = "black";
-            ctx.stroke();
-        } else {
-            ctx.fillStyle = color;
-            ctx.fill();
-        }
-        ctx.fillStyle = "";
-        ctx.closePath();
-    }
-
-    getVertices(angle){
-        this.rotMat.rotMx22(angle);
-        this.dir = this.rotMat.multiplyVec(this.refDir);
-        this.vertex[0] = this.pos.add(this.dir.mult(-this.length/2)).add(this.dir.normal().mult(this.width/2));
-        this.vertex[1] = this.pos.add(this.dir.mult(-this.length/2)).add(this.dir.normal().mult(-this.width/2));
-        this.vertex[2] = this.pos.add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(-this.width/2));
-        this.vertex[3] = this.pos.add(this.dir.mult(this.length/2)).add(this.dir.normal().mult(this.width/2));
-    }
-}
-
-class Triangle{
-    constructor(x1, y1, x2, y2, x3, y3){
-        this.vertex = [];
-        this.vertex[0] = new Vector(x1, y1);
-        this.vertex[1] = new Vector(x2, y2);
-        this.vertex[2] = new Vector(x3, y3);
-        this.pos = new Vector((this.vertex[0].x+this.vertex[1].x+this.vertex[2].x)/3, (this.vertex[0].y+this.vertex[1].y+this.vertex[2].y)/3);
-        this.dir = this.vertex[0].subtr(this.pos).unit();
-        this.refDir = this.dir;
-        this.refDiam = [];
-        this.refDiam[0] = this.vertex[0].subtr(this.pos);
-        this.refDiam[1] = this.vertex[1].subtr(this.pos);
-        this.refDiam[2] = this.vertex[2].subtr(this.pos);
-        this.angle = 0;
-        this.rotMat = new Matrix(2,2);
-    }
-
-    draw(color){
-        ctx.beginPath();
-        ctx.moveTo(this.vertex[0].x, this.vertex[0].y);
-        ctx.lineTo(this.vertex[1].x, this.vertex[1].y);
-        ctx.lineTo(this.vertex[2].x, this.vertex[2].y);
-        ctx.lineTo(this.vertex[0].x, this.vertex[0].y);
-        if (color === ""){
-            ctx.strokeStyle = "black";
-            ctx.stroke();
-        } else {
-            ctx.fillStyle = color;
-            ctx.fill();
-        }
-        ctx.fillStyle = "";
-        ctx.closePath();
-    }
-
-    getVertices(angle){
-        this.rotMat.rotMx22(angle);
-        this.dir = this.rotMat.multiplyVec(this.refDir);
-        this.vertex[0] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[0]));
-        this.vertex[1] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[1]));
-        this.vertex[2] = this.pos.add(this.rotMat.multiplyVec(this.refDiam[2]));
-    }
-}
-
 //Parent class of the bodies (Ball, Capsule, Box, Star, Wall)
 class Body{
     constructor(x, y){
@@ -234,7 +146,7 @@ class Body{
         this.inv_inertia = 0;
         this.elasticity = 1;
 
-        this.friction = 0;
+        this.friction = 0.5;
         this.angFriction = 0;
         this.maxSpeed = 0;
         this.color = "";
@@ -323,177 +235,8 @@ class Ball extends Body{
     }
 }
 
-class Capsule extends Body{
-    constructor(x1, y1, x2, y2, r, m){
-        super();
-        this.comp = [new Circle(x1, y1, r), new Circle(x2, y2, r)];
-        let recV1 = this.comp[1].pos.add(this.comp[1].pos.subtr(this.comp[0].pos).unit().normal().mult(r));
-        let recV2 = this.comp[0].pos.add(this.comp[1].pos.subtr(this.comp[0].pos).unit().normal().mult(r));
-        this.comp.unshift(new Rectangle(recV1.x, recV1.y, recV2.x, recV2.y, 2*r));
-        this.pos = this.comp[0].pos;
-        this.m = m;
-        if (this.m === 0){
-            this.inv_m = 0;
-        } else {
-            this.inv_m = 1 / this.m;
-        }
-        this.inertia = this.m * ((2*this.comp[0].width)**2 +(this.comp[0].length+2*this.comp[0].width)**2) / 12;
-        if (this.m === 0){
-            this.inv_inertia = 0;
-        } else {
-            this.inv_inertia = 1 / this.inertia;
-        }
-    }
 
-    keyControl(){
-        if(this.up){
-            this.acc = this.comp[0].dir.mult(-this.keyForce);
-        }
-        if(this.down){
-            this.acc = this.comp[0].dir.mult(this.keyForce);
-        }
-        if(this.left){
-            this.angVel = -this.angKeyForce;
-        }
-        if(this.right){
-            this.angVel = this.angKeyForce;
-        }
-        if(!this.up && !this.down){
-            this.acc.set(0, 0);
-        }
-    }
 
-    setPosition(x, y, a = this.angle){
-        this.pos.set(x, y);
-        this.angle = a;
-        this.comp[0].pos = this.pos;
-        this.comp[0].getVertices(this.angle + this.angVel);
-        this.comp[1].pos = this.comp[0].pos.add(this.comp[0].dir.mult(-this.comp[0].length/2));
-        this.comp[2].pos = this.comp[0].pos.add(this.comp[0].dir.mult(this.comp[0].length/2));
-        this.angle += this.angVel;
-    }
-
-    reposition(){
-        super.reposition();
-        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
-    }
-}
-
-class Box extends Body{
-    constructor(x1, y1, x2, y2, w, m){
-        super();
-        this.comp = [new Rectangle(x1, y1, x2, y2, w)];
-        this.pos = this.comp[0].pos;
-        this.m = m;
-        if (this.m === 0){
-            this.inv_m = 0;
-        } else {
-            this.inv_m = 1 / this.m;
-        }
-        this.inertia = this.m * (this.comp[0].width**2 +this.comp[0].length**2) / 12;
-        if (this.m === 0){
-            this.inv_inertia = 0;
-        } else {
-            this.inv_inertia = 1 / this.inertia;
-        }
-    }
-
-    keyControl(){
-        if(this.up){
-            this.acc = this.comp[0].dir.mult(-this.keyForce);;
-        }
-        if(this.down){
-            this.acc = this.comp[0].dir.mult(this.keyForce);;
-        }
-        if(this.left){
-            this.angVel = -this.angKeyForce;
-        }
-        if(this.right){
-            this.angVel = this.angKeyForce;
-        }
-        if(!this.up && !this.down){
-            this.acc.set(0,0);
-        }
-    }
-
-    setPosition(x, y, a = this.angle){
-        this.pos.set(x, y);
-        this.angle = a;
-        this.comp[0].pos = this.pos;
-        this.comp[0].getVertices(this.angle + this.angVel);
-        this.angle += this.angVel;
-    }
-
-    reposition(){
-        super.reposition();
-        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
-    }
-}
-
-class Star extends Body{
-    constructor(x1, y1, r, m){
-        super();
-        this.comp = [];
-        this.r = r;
-        let center = new Vector(x1, y1);
-        let upDir = new Vector(0, -1);
-        let p1 = center.add(upDir.mult(r));
-        let p2 = center.add(upDir.mult(-r/2)).add(upDir.normal().mult(-r*Math.sqrt(3)/2));
-        let p3 = center.add(upDir.mult(-r/2)).add(upDir.normal().mult(r*Math.sqrt(3)/2));
-        this.comp.push(new Triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y));
-        p1 = center.add(upDir.mult(-r));
-        p2 = center.add(upDir.mult(r/2)).add(upDir.normal().mult(-r*Math.sqrt(3)/2));
-        p3 = center.add(upDir.mult(r/2)).add(upDir.normal().mult(r*Math.sqrt(3)/2));
-        this.comp.push(new Triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y));
-        this.pos = this.comp[0].pos;
-        
-        this.m = m;
-        if (this.m === 0){
-            this.inv_m = 0;
-        } else {
-            this.inv_m = 1 / this.m;
-        }
-        this.inertia = this.m * ((2*this.r)**2) / 12;
-        if (this.m === 0){
-            this.inv_inertia = 0;
-        } else {
-            this.inv_inertia = 1 / this.inertia;
-        }
-    }
-
-    keyControl(){
-        if(this.up){
-            this.acc = this.comp[0].dir.mult(-this.keyForce);
-        }
-        if(this.down){
-            this.acc = this.comp[0].dir.mult(this.keyForce);
-        }
-        if(this.left){
-            this.angVel = -this.angKeyForce;
-        }
-        if(this.right){
-            this.angVel = this.angKeyForce;
-        }
-        if(!this.up && !this.down){
-            this.acc.set(0,0);
-        }
-    }
-
-    setPosition(x, y, a = this.angle){
-        this.pos.set(x, y);
-        this.angle = a;
-        this.comp[0].pos = this.pos;
-        this.comp[1].pos = this.pos;
-        this.comp[0].getVertices(this.angle + this.angVel);
-        this.comp[1].getVertices(this.angle + this.angVel);
-        this.angle += this.angVel;
-    }
-
-    reposition(){
-        super.reposition();
-        this.setPosition(this.pos.add(this.vel).x, this.pos.add(this.vel).y);
-   }
-}
 
 class Wall extends Body{
     constructor(x1, y1, x2, y2){
@@ -688,30 +431,12 @@ function findAxes(o1, o2){
     if(o1 instanceof Line){
         axes.push(o1.dir.normal());
     }   
-    if (o1 instanceof Rectangle){
-        axes.push(o1.dir.normal());
-        axes.push(o1.dir);
-    }
-    if (o1 instanceof Triangle){
-        axes.push(o1.vertex[1].subtr(o1.vertex[0]).normal());
-        axes.push(o1.vertex[2].subtr(o1.vertex[1]).normal());
-        axes.push(o1.vertex[0].subtr(o1.vertex[2]).normal());
-    }
     if (o2 instanceof Circle){
         axes.push(closestVertexToPoint(o1, o2.pos).subtr(o2.pos).unit());
     }
     if (o2 instanceof Line){
         axes.push(o2.dir.normal());
     }   
-    if (o2 instanceof Rectangle){
-        axes.push(o2.dir.normal());
-        axes.push(o2.dir);
-    }
-    if (o2 instanceof Triangle){
-        axes.push(o2.vertex[1].subtr(o2.vertex[0]).normal());
-        axes.push(o2.vertex[2].subtr(o2.vertex[1]).normal());
-        axes.push(o2.vertex[0].subtr(o2.vertex[2]).normal());
-    }
     return axes;
 }
 
@@ -732,12 +457,6 @@ function closestVertexToPoint(obj, p){
 function getShapeAxes(obj){
     if(obj instanceof Circle || obj instanceof Line){
         return 1;
-    }
-    if(obj instanceof Rectangle){
-        return 2;
-    }
-    if(obj instanceof Triangle){
-        return 3;
     }
 }
 
