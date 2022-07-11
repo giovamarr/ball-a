@@ -517,12 +517,12 @@ function physicsLoop(timestamp) {
            if((BODIES[index].layer === BODIES[bodyPair].layer ||
                BODIES[index].layer === 0 || BODIES[bodyPair].layer === 0) && 
                collide(BODIES[index], BODIES[bodyPair])){
-                    let bestSat = collide(BODIES[index], BODIES[bodyPair]);
-                    COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex));
-           }
-        }
-    });
-
+                   let bestSat = collide(BODIES[index], BODIES[bodyPair]);
+                   COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex));
+                }
+            }
+        });
+        
     COLLISIONS.forEach((c) => {
         c.penRes();
         c.collRes();

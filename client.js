@@ -30,7 +30,7 @@ socket.on('updateConnections', player => {
         }
         if(player.id === selfID){
             document.getElementById('playerWelcome').innerHTML =
-                `Hi, enter your nickname and start to play (in room no.${player.roomNo})`
+                `Ingresar nickname (room numero ${player.roomNo})`
             userInput(clientBalls[player.id]);
         }
     }
@@ -83,8 +83,7 @@ socket.on('updateScore', scorerId => {
                 }
                 if(clientBalls[id].score === 3){
                     document.getElementById('winning').innerHTML = 
-                    `The winner is ${clientBalls[id].name}!!!
-                    <br>LET'S PLAY AGAIN!`
+                    `Ganó ${clientBalls[id].name}!`
                 }
             }
         }

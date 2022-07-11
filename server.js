@@ -506,12 +506,14 @@ class Wall extends Body{
 //Collision manifold, consisting the data for collision handling
 //Manifolds are collected in an array for every frame
 class CollData{
-    constructor(o1, o2, normal, pen, cp){
+    constructor(o1, o2, normal, pen, cp, shot){
         this.o1 = o1;
         this.o2 = o2;
         this.normal = normal;
         this.pen = pen;
         this.cp = cp;
+        this.shot = shot;
+
     }
 
     penRes(){
@@ -545,7 +547,15 @@ class CollData{
 
         //3. Changing the velocities
         this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
-        this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
+        if (this.shot){
+            let impulse = 50
+            let impulseVec = this.normal.mult(impulse);
+            this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m*2));
+
+        }else{
+
+            this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
+        }
 
         this.o1.angVel += this.o1.inv_inertia * Vector.cross(collArm1, impulseVec);
         this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec); 
@@ -799,7 +809,18 @@ function physicsLoop(timestamp) {
                BODIES[index].layer === 0 || BODIES[bodyPair].layer === 0) && 
                collide(BODIES[index], BODIES[bodyPair])){
                     let bestSat = collide(BODIES[index], BODIES[bodyPair]);
-                    COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex));
+                    if((BODIES[index].score != undefined )&& ( BODIES[bodyPair].score == undefined) ){
+                        if(BODIES[index].action){
+                            COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex, true));
+
+                        }else{
+                            COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex, false));
+                        }
+                    }else{
+                        COLLISIONS.push(new CollData(BODIES[index], BODIES[bodyPair], bestSat.axis, bestSat.pen, bestSat.vertex, false));
+
+                    }
+
            }
         }
     });

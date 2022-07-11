@@ -5,7 +5,8 @@
 #canvas{
     border: 1px solid black;
     display: block;
-    margin: 0 auto;
+    margin: 100px auto;
+    
     background: var(--canva);
 }
       
@@ -47,7 +48,9 @@ button:active {
 }
 #userName {
   border-radius: 10px;
-  height: 150%;
+  height: 25px;
+  padding-left: 8px;
+  font-size: 15px;
 }
 #userForm {
   text-align: center;
