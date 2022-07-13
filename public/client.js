@@ -28,10 +28,17 @@ socket.on('updateConnections', player => {
         } else if(clientBalls[player.id].no === 2){
             clientBalls[player.id].color = "yellow";
         }
+         else if(clientBalls[player.id].no === 3){
+            clientBalls[player.id].color = "green";
+        }
+        else if(clientBalls[player.id].no === 4){
+            clientBalls[player.id].color = "yellow";
+        }
         if(player.id === selfID){
             document.getElementById('playerWelcome').innerHTML =
                 `Ingresar nickname (room numero ${player.roomNo})`
             userInput(clientBalls[player.id]);
+            console.log('input: ' + clientBalls[player.id])
         }
     }
 })

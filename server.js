@@ -838,19 +838,6 @@ function renderLoop(){
     })
 }
 
-function mainLoop(){
-    userInteraction();
-    physicsLoop();
-    renderLoop();
-    gameLogic();
-    requestAnimationFrame(mainLoop);
-}
-
-function renderOnly(){
-    renderLoop();
-    requestAnimationFrame(renderOnly);
-}
-
 
 //************************* END OF PHYSICS ENGINE ***/
 
@@ -882,11 +869,13 @@ io.on('connection', connected);
 setInterval(serverLoop, 1000/60);
 
 function connected(socket){
+    console.log(socket.id)
     clientNo++;
-    roomNo = Math.round(clientNo / 2);
+    // roomNo = Math.round(clientNo / 2);
+    roomNo = 1
     socket.join(roomNo);
     console.log(`New client no.: ${clientNo}, room no.: ${roomNo}`);
-    if (clientNo % 2 === 1){
+    if (clientNo === 1){
         //creating player 1
         serverBalls[socket.id] = new Ball(80, 270, 25, 10);
         serverBalls[socket.id].maxSpeed = 4;
@@ -897,7 +886,7 @@ function connected(socket){
         serverBalls[socket.id].layer = roomNo;
         playerReg[socket.id] = {id: socket.id, x: 115, y: 270, roomNo: roomNo, no: 1};
     }
-    else if (clientNo % 2 === 0){
+    else if (clientNo  === 2){
         //creating player 2
         serverBalls[socket.id] = new Ball(560, 270, 25, 10);
         serverBalls[socket.id].maxSpeed = 4;
@@ -907,7 +896,27 @@ function connected(socket){
         serverBalls[socket.id].no = 2;
         serverBalls[socket.id].layer = roomNo;
         playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 2};
-        football[roomNo] = new Ball(320, 270, 20, 6);
+    }    else if (clientNo  === 3){
+        //creating player 2
+        serverBalls[socket.id] = new Ball(560, 270, 25, 10);
+        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].angFriction = 0.01;
+        serverBalls[socket.id].angKeyForce = 0.08;
+        serverBalls[socket.id].score = 0;
+        serverBalls[socket.id].no = 3;
+        serverBalls[socket.id].layer = roomNo;
+        playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 3};
+    }    else if (clientNo === 4){
+        //creating player 2
+        serverBalls[socket.id] = new Ball(560, 270, 25, 10);
+        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].angFriction = 0.01;
+        serverBalls[socket.id].angKeyForce = 0.08;
+        serverBalls[socket.id].score = 0;
+        serverBalls[socket.id].no = 4;
+        serverBalls[socket.id].layer = roomNo;
+        playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 4};
+        football[roomNo] = new Ball(320, 270, 10, 6);
         football[roomNo].layer = roomNo;
         io.emit('updateFootball', {x: football[roomNo].pos.x, y: football[roomNo].pos.y});
     }
@@ -950,9 +959,10 @@ function connected(socket){
     socket.on('clientName', data => {
         serverBalls[socket.id].name = data;
         console.log(`${data} is in room no.${serverBalls[socket.id].layer}`);
-        if (playersReadyInRoom(serverBalls[socket.id].layer) === 2){
+        if (playersReadyInRoom(serverBalls[socket.id].layer) === 4){
             for (let id in serverBalls){
                 if(serverBalls[id].layer === serverBalls[socket.id].layer){
+                    console.log(serverBalls[id].layer, id,  serverBalls[id].name)
                     io.to(serverBalls[id].layer).emit('playerName', {id: id, name: serverBalls[id].name});
                 }
             }
@@ -1044,6 +1054,16 @@ function gameSetup(room){
             serverBalls[id].setPosition(115, 270, 0);
         }
         if (serverBalls[id].no === 2 && serverBalls[id].layer === room){
+            serverBalls[id].vel.set(0, 0);
+            serverBalls[id].angVel = 0;
+            serverBalls[id].setPosition(525, 270, 0);
+        }
+        if (serverBalls[id].no === 3 && serverBalls[id].layer === room){
+            serverBalls[id].vel.set(0, 0);
+            serverBalls[id].angVel = 0;
+            serverBalls[id].setPosition(525, 270, 0);
+        }
+        if (serverBalls[id].no === 4 && serverBalls[id].layer === room){
             serverBalls[id].vel.set(0, 0);
             serverBalls[id].angVel = 0;
             serverBalls[id].setPosition(525, 270, 0);
