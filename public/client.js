@@ -19,21 +19,24 @@ socket.on('updateConnections', player => {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
     if(clientBalls[player.id] === undefined){
-        clientBalls[player.id] = new Ball(player.x+35, player.y, 30, 4);
+        if(player.no === 1){
+            clientBalls[player.id] = new Ball(80, 270, 30, 4);
+            clientBalls[player.id].color = "blue";
+        } else if(player.no === 2){
+            clientBalls[player.id] = new Ball(100, 270, 30, 4);
+            clientBalls[player.id].color = "yellow";
+        }
+        else if(player.no === 3){
+            clientBalls[player.id] = new Ball(560, 270, 30, 4);
+            clientBalls[player.id].color = "green";
+        }
+        else if(player.no === 4){
+            clientBalls[player.id] = new Ball(560, 270, 28, 30, 4);
+            clientBalls[player.id].color = "yellow";
+        }
         clientBalls[player.id].maxSpeed = 4;
         clientBalls[player.id].score = 0;
         clientBalls[player.id].no = player.no;
-        if(clientBalls[player.id].no === 1){
-            clientBalls[player.id].color = "blue";
-        } else if(clientBalls[player.id].no === 2){
-            clientBalls[player.id].color = "yellow";
-        }
-         else if(clientBalls[player.id].no === 3){
-            clientBalls[player.id].color = "green";
-        }
-        else if(clientBalls[player.id].no === 4){
-            clientBalls[player.id].color = "yellow";
-        }
         if(player.id === selfID){
             document.getElementById('playerWelcome').innerHTML =
                 `Ingresar nickname (room numero ${player.roomNo})`

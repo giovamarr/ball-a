@@ -877,7 +877,7 @@ function connected(socket){
     console.log(`New client no.: ${clientNo}, room no.: ${roomNo}`);
     if (clientNo === 1){
         //creating player 1
-        serverBalls[socket.id] = new Ball(80, 270, 25, 10);
+        serverBalls[socket.id] = new Ball(80, 270, 28, 10);
         serverBalls[socket.id].maxSpeed = 4;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
@@ -888,7 +888,7 @@ function connected(socket){
     }
     else if (clientNo  === 2){
         //creating player 2
-        serverBalls[socket.id] = new Ball(560, 270, 25, 10);
+        serverBalls[socket.id] = new Ball(100, 270, 28, 10);
         serverBalls[socket.id].maxSpeed = 4;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
@@ -898,7 +898,7 @@ function connected(socket){
         playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 2};
     }    else if (clientNo  === 3){
         //creating player 2
-        serverBalls[socket.id] = new Ball(560, 270, 25, 10);
+        serverBalls[socket.id] = new Ball(560, 270, 28, 10);
         serverBalls[socket.id].maxSpeed = 4;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
@@ -908,7 +908,7 @@ function connected(socket){
         playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 3};
     }    else if (clientNo === 4){
         //creating player 2
-        serverBalls[socket.id] = new Ball(560, 270, 25, 10);
+        serverBalls[socket.id] = new Ball(560, 270, 28, 10);
         serverBalls[socket.id].maxSpeed = 4;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
@@ -916,7 +916,7 @@ function connected(socket){
         serverBalls[socket.id].no = 4;
         serverBalls[socket.id].layer = roomNo;
         playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 4};
-        football[roomNo] = new Ball(320, 270, 10, 6);
+        football[roomNo] = new Ball(320, 270, 12, 6);
         football[roomNo].layer = roomNo;
         io.emit('updateFootball', {x: football[roomNo].pos.x, y: football[roomNo].pos.y});
     }
