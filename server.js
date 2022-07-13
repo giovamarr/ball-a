@@ -841,20 +841,19 @@ function renderLoop(){
 
 //************************* END OF PHYSICS ENGINE ***/
 
-
 const express = require('express')
-const path = require('path')
-const http = require('http')
-const PORT = process.env.PORT || 5500
 const app = express()
-const server = http.createServer(app)
 
-const io = require('socket.io')(3000)
+const path = require('path')
+const PORT = process.env.PORT || 5500
+const http = require('http').Server(app)
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+const io = require('socket.io')(http)
+
 app.use(express.static(path.join(__dirname, "public")))
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
+http.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
 buildStadium();
 let playerReg = {};
