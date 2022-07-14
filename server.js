@@ -878,7 +878,7 @@ function connected(socket){
     if (clientNo === 1){
         //creating player 1
         serverBalls[socket.id] = new Ball(80, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].maxSpeed = 3.5;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
@@ -889,17 +889,17 @@ function connected(socket){
     else if (clientNo  === 2){
         //creating player 2
         serverBalls[socket.id] = new Ball(100, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].maxSpeed = 3.5;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
         serverBalls[socket.id].no = 2;
         serverBalls[socket.id].layer = roomNo;
-        playerReg[socket.id] = {id: socket.id, x: 525, y: 270, roomNo: roomNo, no: 2};
+        playerReg[socket.id] = {id: socket.id, x: 115, y: 270, roomNo: roomNo, no: 2};
     }    else if (clientNo  === 3){
         //creating player 2
         serverBalls[socket.id] = new Ball(560, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].maxSpeed = 3.5;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
@@ -909,7 +909,7 @@ function connected(socket){
     }    else if (clientNo === 4){
         //creating player 2
         serverBalls[socket.id] = new Ball(560, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 4;
+        serverBalls[socket.id].maxSpeed = 3.5;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;

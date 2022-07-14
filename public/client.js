@@ -26,24 +26,23 @@ socket.on('updateConnections', player => {
             clientBalls[player.id].color = "blue";
         } else if(player.no === 2){
             clientBalls[player.id] = new Ball(100, 270, 30, 4);
-            clientBalls[player.id].color = "yellow";
+            clientBalls[player.id].color = "blue";
         }
         else if(player.no === 3){
             clientBalls[player.id] = new Ball(560, 270, 30, 4);
-            clientBalls[player.id].color = "green";
+            clientBalls[player.id].color = "yellow";
         }
         else if(player.no === 4){
             clientBalls[player.id] = new Ball(560, 270, 28, 30, 4);
             clientBalls[player.id].color = "yellow";
         }
-        clientBalls[player.id].maxSpeed = 4;
+        clientBalls[player.id].maxSpeed = 3.5;
         clientBalls[player.id].score = 0;
         clientBalls[player.id].no = player.no;
         if(player.id === selfID){
             // document.getElementById('playerWelcome').innerHTML =
             //     `Ingresar nickname (room numero ${player.roomNo})`
             userInput(clientBalls[player.id]);
-            console.log('input: ' + clientBalls[player.id])
         }
     }
 })
