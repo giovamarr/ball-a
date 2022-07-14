@@ -36,7 +36,7 @@ socket.on('updateConnections', player => {
             clientBalls[player.id] = new Ball(560, 270, 28, 30, 4);
             clientBalls[player.id].color = "yellow";
         }
-        clientBalls[player.id].maxSpeed = 3.5;
+        clientBalls[player.id].maxSpeed = 1;
         clientBalls[player.id].score = 0;
         clientBalls[player.id].no = player.no;
         if(player.id === selfID){
