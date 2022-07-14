@@ -5,8 +5,8 @@ const socket = io.connect();
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-const form = document.getElementById('userForm');
-const gameAreaDiv = document.getElementById('gameArea');
+// const form = document.getElementById('userForm');
+// const gameAreaDiv = document.getElementById('gameArea');
 
 buildStadium();
 let football;
@@ -40,8 +40,8 @@ socket.on('updateConnections', player => {
         clientBalls[player.id].score = 0;
         clientBalls[player.id].no = player.no;
         if(player.id === selfID){
-            document.getElementById('playerWelcome').innerHTML =
-                `Ingresar nickname (room numero ${player.roomNo})`
+            // document.getElementById('playerWelcome').innerHTML =
+            //     `Ingresar nickname (room numero ${player.roomNo})`
             userInput(clientBalls[player.id]);
             console.log('input: ' + clientBalls[player.id])
         }
@@ -148,12 +148,12 @@ function buildStadium(){
     new Wall(630, 180, 590, 180);
 }
 
-form.onsubmit = function(e) {
-    e.preventDefault();
-    form.style.display = 'none';
-    gameAreaDiv.style.display = 'block';
+function load() {
     canvas.focus();
-    clientBalls[selfID].name = document.getElementById('userName').value;
+    // clientBalls[selfID].name = document.getElementById('userName').value;
+    clientBalls[selfID].name = 'giovanni'
     socket.emit('clientName', clientBalls[selfID].name);
-    return false;
+    
 }
+
+window.onload = load;

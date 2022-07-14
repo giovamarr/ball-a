@@ -1,0 +1,19 @@
+:root {
+    --canva: #59A608;
+  }
+
+#canvas{
+    border: 1px solid black;
+    display: block;
+    margin: 100px auto;
+    
+    background: var(--canva);
+}
+      
+#gameArea {
+  display: block;
+}
+#winning {
+  color: red;
+  text-align: center;
+}

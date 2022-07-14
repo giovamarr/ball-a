@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/login.css">
     <title>Juego de prueba</title>
+    <script defer src="js/login.js"></script>
 </head>
-<body>
-    <div id="userForm">
-            <form action="">
+<body class="login">
+    <!-- <div id="userForm">
+            <form action="/public/game.html">
                 <img src="https://pbs.twimg.com/media/D_xhCuKX4AAqQfN.jpg" style="width: 250px; border-radius:100%; margin-top: 100px;">
                 <p id="playerWelcome"></p>
                 <input id="userName" required maxlength="12" autocomplete="off" />
@@ -17,25 +18,27 @@
             </form>
             <br>
             <hr>
+            <br>
+    </div>     -->
 
-            <div id="howto">
-                <p>@Coopyright Giovanni Martin
-                </p>
-     
+    <div class="container">
+        <h2 class="text-center">Login</h2>
+        <br>
+        <form action="/game.html" class="loginForm">
+            <div class="input-group">
+                <label for="username" class="label">Username</label>
+                <input type="text" id="username" class="input">
+                <span class="error-message"></span>
             </div>
             <br>
-
+            <div class="input-group">
+                <label for="password" class="label">Password</label>
+                <input type="password" id="password" class="input">
+                <span class="error-message"></span>
+            </div>
+            <br>
+            <button class="button" type="submit">Login</button>
+        </form>
     </div>
-
-    <div id="gameArea">
-        <canvas id="canvas" tabindex=0 width="640" height=480></canvas>
-        <br>
-        <h1 id="winning"></h1>
-    </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-    <script src="core.js"></script>
-    <script src="userInput.js"></script>
-    <script src="client.js"></script>
 </body>
 </html>
