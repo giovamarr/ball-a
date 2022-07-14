@@ -151,8 +151,8 @@ function buildStadium(){
 function load() {
     canvas.focus();
     // clientBalls[selfID].name = document.getElementById('userName').value;
-    clientBalls[selfID].name = 'giovanni'
-    socket.emit('clientName', clientBalls[selfID].name);
+    // clientBalls[selfID].name = 'giovanni'
+    socket.emit('clientName', 'giovanni');
     
 }
 

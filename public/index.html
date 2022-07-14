@@ -4,41 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/login.css">
-    <title>Juego de prueba</title>
+    <title>Gioball</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet">
+
     <script defer src="js/login.js"></script>
 </head>
-<body class="login">
-    <!-- <div id="userForm">
-            <form action="/public/game.html">
-                <img src="https://pbs.twimg.com/media/D_xhCuKX4AAqQfN.jpg" style="width: 250px; border-radius:100%; margin-top: 100px;">
-                <p id="playerWelcome"></p>
-                <input id="userName" required maxlength="12" autocomplete="off" />
-                <br><br>
-                <button type="submit">Confirmar</button>
-            </form>
-            <br>
-            <hr>
-            <br>
-    </div>     -->
 
-    <div class="container">
-        <h2 class="text-center">Login</h2>
-        <br>
-        <form action="/game.html" class="loginForm">
-            <div class="input-group">
-                <label for="username" class="label">Username</label>
-                <input type="text" id="username" class="input">
-                <span class="error-message"></span>
-            </div>
-            <br>
-            <div class="input-group">
-                <label for="password" class="label">Password</label>
-                <input type="password" id="password" class="input">
-                <span class="error-message"></span>
-            </div>
-            <br>
-            <button class="button" type="submit">Login</button>
-        </form>
+<body>
+	<img class="wave" src="img/wave.png">
+	<div class="container">
+		<div class="img">
+			<img src="img/bg.svg">
+		</div>
+		<div class="login-content">
+			<form action="/game.html">
+				<img src="img/avatar.svg">
+				<h2 class="title">Gioball</h2>
+           		<div class="input-div one">
+           		   <div class="i">
+           		   		<i class="fas fa-user"></i>
+           		   </div>
+           		   <div class="div">
+           		   		<h5>Username</h5>
+           		   		<input type="text" class="input" id="username">
+           		   </div>
+           		</div>
+           		<div class="input-div pass">
+           		   <div class="i"> 
+           		    	<i class="fas fa-lock"></i>
+           		   </div>
+           		   <div class="div">
+           		    	<h5>Password</h5>
+           		    	<input type="password" class="input" id="password">
+            	   </div>
+            	</div>
+            	<a href="#">Forgot Password?</a>
+            	<input type="submit" class="btn" value="Login">
+            </form>
+        </div>
     </div>
 </body>
+
 </html>

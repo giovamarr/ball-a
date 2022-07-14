@@ -1,3 +1,25 @@
+const inputs = document.querySelectorAll(".input");
+
+
+function addcl(){
+	let parent = this.parentNode.parentNode;
+	parent.classList.add("focus");
+}
+
+function remcl(){
+	let parent = this.parentNode.parentNode;
+	if(this.value == ""){
+		parent.classList.remove("focus");
+	}
+}
+
+
+inputs.forEach(input => {
+	input.addEventListener("focus", addcl);
+	input.addEventListener("blur", remcl);
+});
+
+// https://github.com/thedevdrawer/js-login
 class Login {
 	constructor(form, fields) {
 		this.form = form;
@@ -60,12 +82,12 @@ class Login {
 			if (errorMessage) {
 				errorMessage.innerText = "";
 			}
-			field.classList.remove("input-error");
+			// field.classList.remove("input-error");
 		}
 
 		if (status == "error") {
 			errorMessage.innerText = message;
-			field.classList.add("input-error");
+			// field.classList.add("input-error");
 		}
 	}
 }

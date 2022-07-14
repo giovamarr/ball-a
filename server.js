@@ -868,6 +868,7 @@ io.on('connection', connected);
 setInterval(serverLoop, 1000/60);
 
 function connected(socket){
+    console.log('se conecto')
     console.log(socket.id)
     clientNo++;
     // roomNo = Math.round(clientNo / 2);
