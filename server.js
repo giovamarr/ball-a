@@ -548,7 +548,7 @@ class CollData{
         //3. Changing the velocities
         this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
         if (this.shot){
-            let impulse = 50
+            let impulse = 30
             let impulseVec = this.normal.mult(impulse);
             this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m*2));
 
@@ -878,7 +878,7 @@ function connected(socket){
     if (clientNo === 1){
         //creating player 1
         serverBalls[socket.id] = new Ball(80, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 1;
+        serverBalls[socket.id].maxSpeed = 2;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
@@ -889,7 +889,7 @@ function connected(socket){
     else if (clientNo  === 2){
         //creating player 2
         serverBalls[socket.id] = new Ball(100, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 1;
+        serverBalls[socket.id].maxSpeed = 2;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
@@ -899,7 +899,7 @@ function connected(socket){
     }    else if (clientNo  === 3){
         //creating player 2
         serverBalls[socket.id] = new Ball(560, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 1;
+        serverBalls[socket.id].maxSpeed = 2;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
@@ -909,7 +909,7 @@ function connected(socket){
     }    else if (clientNo === 4){
         //creating player 2
         serverBalls[socket.id] = new Ball(560, 270, 28, 10);
-        serverBalls[socket.id].maxSpeed = 1;
+        serverBalls[socket.id].maxSpeed = 2;
         serverBalls[socket.id].angFriction = 0.01;
         serverBalls[socket.id].angKeyForce = 0.08;
         serverBalls[socket.id].score = 0;
