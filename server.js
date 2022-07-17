@@ -841,18 +841,61 @@ function renderLoop(){
 
 //************************* END OF PHYSICS ENGINE ***/
 
+const mongoose = require('mongoose')
+const mongoDB = 'mongodb+srv://giovamar:lalo123@cluster0.yyixcod.mongodb.net/?retryWrites=true&w=majority'
+mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true }).then(()=>{
+    console.log('connected')
+})
+// models
+const User = require('./models/users')
+const Team = require('./models/teams')
+
 const express = require('express')
 const app = express()
+
 
 const path = require('path')
 const PORT = process.env.PORT || 5500
 const http = require('http').Server(app)
+var bodyParser = require('body-parser')
 
 const io = require('socket.io')(http)
 
 app.use(express.static(path.join(__dirname, "public")))
 
+// create application/json parser
+var jsonParser = bodyParser.json()
+ 
+// create application/x-www-form-urlencoded parser
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
+
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
+app.post('/login', urlencodedParser, function(req, res){
+    console.log('login') 
+    console.log(req.body.username)
+    const user = new User({username:req.body.username})
+    user.save().then(()=> console.log('guardo'))
+    res.sendFile(__dirname + '/public/home.html')}
+    )
+
+// app.get('/teams', urlencodedParser, function(req, res){
+
+
+//     const teams = User.find()
+//     console.log(teams)
+//     // for(let i=0; i<90; i++){
+//     //     const team = new Team()
+//     //     console.log(team)
+//     // }  
+//     //     // console.log('login') 
+//         // console.log(req.body.username)
+  
+//         // res.sendFile(__dirname + '/public/home.html')
+// }
+//         )
+    
+
+
 http.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
 buildStadium();
