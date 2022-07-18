@@ -5,5 +5,5 @@ const teamSchema = new mongoose.Schema({
     created: { type: Date, default: Date.now },
 })
 
-const Team = mongoose.model('teamSchema' ,teamSchema )
+const Team = mongoose.model('teams' ,teamSchema )
 module.exports = Team

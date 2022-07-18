@@ -5,5 +5,5 @@ const userSchema = new mongoose.Schema({
     created: { type: Date, default: Date.now },
 })
 
-const User = mongoose.model('userSchema' ,userSchema )
+const User = mongoose.model('users' ,userSchema )
 module.exports = User

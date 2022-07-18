@@ -870,29 +870,43 @@ var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
-app.post('/login', urlencodedParser, function(req, res){
-    console.log('login') 
-    console.log(req.body.username)
-    const user = new User({username:req.body.username})
-    user.save().then(()=> console.log('guardo'))
-    res.sendFile(__dirname + '/public/home.html')}
-    )
 
-// app.get('/teams', urlencodedParser, function(req, res){
+app.post('/login', urlencodedParser, async (req, res) =>{
+    const user = await User.findOne({username:req.body.username})
+    if (user){
+        console.log(user)
+        res.sendFile(__dirname + '/public/home.html')
+    }else{
+        console.log('error')
+        res.sendFile(__dirname + '/public/index.html')
+
+    }
+})
+
+app.post('/register', urlencodedParser, async (req, res) =>{
+    const user = await User.findOne({username:req.body.username})
+    if (user){
+        console.log('username ya registrado')
+        res.sendFile(__dirname + '/public/login.html')
+    }else{
+        const newUser = new User({username:req.body.username, password:req.body.password})
+        user.save().then(()=> console.log('guardo'))
+        res.sendFile(__dirname + '/public/home.html')}
+    })
 
 
-//     const teams = User.find()
-//     console.log(teams)
-//     // for(let i=0; i<90; i++){
-//     //     const team = new Team()
-//     //     console.log(team)
-//     // }  
-//     //     // console.log('login') 
-//         // console.log(req.body.username)
-  
-//         // res.sendFile(__dirname + '/public/home.html')
-// }
-//         )
+app.get('/teams', async (req, res)=>{
+    const  teams = await Team.find()
+    console.log(teams)
+    res.send(JSON.stringify({teams: teams}))
+})
+app.post('/teams/add', urlencodedParser, function(req, res){
+    console.log(req.body.name)
+    const team = new Team({name:req.body.name})
+    team.save().then(()=> console.log('guardo'))
+    res.sendFile(__dirname + '/public/home.html')
+    })
+    
     
 
 
